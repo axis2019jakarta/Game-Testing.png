@@ -1,43 +1,120 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Platformer Game - Ratus</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { margin: 0; background: #000; }
-    canvas { display: block; margin: auto; image-rendering: pixelated; }
+    body { margin: 0; background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; }
+    canvas { image-rendering: pixelated; }
   </style>
 </head>
 <body>
 <script src="https://unpkg.com/kaboom/dist/kaboom.js"></script>
 <script>
+// Initialize Kaboom
 kaboom({
   width: 960,
   height: 540,
-  background: [135, 206, 235],
-});// Load assets loadSprite("bg", "bg.png"); loadSprite("run", "run.png", { sliceX: 6, anims: { run: { from: 0, to: 5, loop: true } } }); loadSprite("jump", "jump.png", { sliceX: 6, anims: { jump: { from: 0, to: 5, loop: false } } }); loadSprite("trap", "trap.png");
+  background: [135, 206, 235], // Warna langit biru
+});
 
-scene("main", () => { add([sprite("bg"), pos(0, 0), scale(1.5)]);
+// Load assets
+// Pastikan path ke file gambar ini sudah benar sesuai dengan struktur folder Anda.
+// Jika file berada di folder 'public', path-nya adalah root.
+// Contoh: Jika file Anda adalah 'public/Game-Testing.png', maka path-nya adalah '/Game-Testing.png'
+loadSprite("player", "/run.png", { // Asumsi "run.png" untuk animasi lari
+    sliceX: 6,
+    anims: {
+        "idle": 0,
+        "run": { from: 0, to: 5, loop: true, speed: 10 },
+    },
+});
+loadSprite("trap", "/Game-Testing.png"); // Ganti dengan path ke sprite trap jika berbeda
 
-const player = add([ sprite("run", { anim: "run" }), pos(80, 400), area(), body(), scale(2), anchor("center") ]);
+// Define the main game scene
+scene("main", () => {
+  // Add a background (untuk saat ini menggunakan warna solid)
+  add([
+    rect(width(), height()),
+    color(135, 206, 235),
+    pos(0, 0)
+  ]);
 
-const ground = add([ rect(width(), 40), pos(0, height() - 40), area(), solid(), color(100, 200, 100), ]);
+  const player = add([
+    sprite("player"),
+    pos(80, 400),
+    area(),
+    body(),
+    scale(2),
+    anchor("center"),
+    "player",
+  ]);
 
-const trap = add([ sprite("trap"), pos(400, height() - 80), area(), scale(1.5) ]);
+  player.play("run");
 
-onKeyDown("right", () => { player.move(160, 0); if (player.curAnim() !== "run") player.play("run"); });
+  // Add the ground
+  add([
+    rect(width(), 48),
+    pos(0, height() - 48),
+    outline(4),
+    area(),
+    solid(),
+    color(127, 200, 255),
+  ]);
 
-onKeyDown("left", () => { player.move(-160, 0); if (player.curAnim() !== "run") player.play("run"); });
+  // Function to spawn traps
+  function spawnTrap() {
+    add([
+      sprite("trap"), // Asumsi sprite trap ada di 'Game-Testing.png'
+      pos(width(), height() - 48),
+      area(),
+      move(LEFT, 240),
+      "trap",
+      anchor("botleft"),
+      offscreen({ destroy: true }),
+    ]);
+    wait(rand(1.5, 3), spawnTrap);
+  }
 
-onKeyPress("space", () => { if (player.isGrounded()) { player.jump(600); player.use(sprite("jump", { anim: "jump" })); player.play("jump"); } });
+  spawnTrap();
 
-onKeyRelease(["left", "right"], () => { player.stop(); });
+  // Player controls
+  onKeyPress("space", () => {
+    if (player.isGrounded()) {
+      player.jump(800);
+    }
+  });
 
-player.onUpdate(() => { if (player.isGrounded() && !isKeyDown("left") && !isKeyDown("right")) { player.stop(); } });
+  // Game over when player collides with a trap
+  player.onCollide("trap", () => {
+    destroy(player);
+    go("lose", { score: 0 }); // Pindah ke scene "lose"
+  });
+});
 
-player.onCollide(trap, () => { destroy(player); add([ text("GAME OVER", { size: 32 }), pos(width() / 2, height() / 2), anchor("center") ]); }); });
+// Define the lose scene
+scene("lose", ({ score }) => {
+  add([
+    text("GAME OVER"),
+    pos(center()),
+    anchor("center"),
+  ]);
 
-// Start the game go("main"); </script>
+  add([
+    text("Press Space to Restart"),
+    pos(center().x, center().y + 40),
+    scale(0.5),
+    anchor("center"),
+  ]);
 
+  onKeyPress("space", () => {
+    go("main");
+  });
+});
+
+// Start the game
+go("main");
+</script>
 </body>
 </html>
