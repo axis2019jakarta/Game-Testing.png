@@ -1,0 +1,43 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Platformer Game - Ratus</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; background: #000; }
+    canvas { display: block; margin: auto; image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+<script src="https://unpkg.com/kaboom/dist/kaboom.js"></script>
+<script>
+kaboom({
+  width: 960,
+  height: 540,
+  background: [135, 206, 235],
+});// Load assets loadSprite("bg", "bg.png"); loadSprite("run", "run.png", { sliceX: 6, anims: { run: { from: 0, to: 5, loop: true } } }); loadSprite("jump", "jump.png", { sliceX: 6, anims: { jump: { from: 0, to: 5, loop: false } } }); loadSprite("trap", "trap.png");
+
+scene("main", () => { add([sprite("bg"), pos(0, 0), scale(1.5)]);
+
+const player = add([ sprite("run", { anim: "run" }), pos(80, 400), area(), body(), scale(2), anchor("center") ]);
+
+const ground = add([ rect(width(), 40), pos(0, height() - 40), area(), solid(), color(100, 200, 100), ]);
+
+const trap = add([ sprite("trap"), pos(400, height() - 80), area(), scale(1.5) ]);
+
+onKeyDown("right", () => { player.move(160, 0); if (player.curAnim() !== "run") player.play("run"); });
+
+onKeyDown("left", () => { player.move(-160, 0); if (player.curAnim() !== "run") player.play("run"); });
+
+onKeyPress("space", () => { if (player.isGrounded()) { player.jump(600); player.use(sprite("jump", { anim: "jump" })); player.play("jump"); } });
+
+onKeyRelease(["left", "right"], () => { player.stop(); });
+
+player.onUpdate(() => { if (player.isGrounded() && !isKeyDown("left") && !isKeyDown("right")) { player.stop(); } });
+
+player.onCollide(trap, () => { destroy(player); add([ text("GAME OVER", { size: 32 }), pos(width() / 2, height() / 2), anchor("center") ]); }); });
+
+// Start the game go("main"); </script>
+
+</body>
+</html>
